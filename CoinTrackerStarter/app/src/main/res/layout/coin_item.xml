@@ -7,7 +7,7 @@
 
         <variable
             name="coin"
-            type="ca.burchill.cointracker.network.NetworkCoin" />
+            type="ca.burchill.cointracker.domain.Coin" />
     </data>
 
     <androidx.cardview.widget.CardView
@@ -16,7 +16,6 @@
         android:layout_margin="8dp"
         android:elevation="6dp"
         android:padding="24dp"
-        app:cardBackgroundColor="@color/design_default_color_background"
         app:cardCornerRadius="4dp">
 
         <androidx.constraintlayout.widget.ConstraintLayout

@@ -12,10 +12,14 @@ import ca.burchill.cointracker.databinding.FragmentCoinListBinding
 import ca.burchill.cointracker.viewModels.CoinListViewModel
 
 
+
 class CoinListFragment : Fragment() {
 
     private val viewModel: CoinListViewModel by lazy {
-        ViewModelProvider(this).get(CoinListViewModel::class.java)
+        val activity = requireNotNull(this.activity) {
+            "You can only access the viewModel after onActivityCreated()"
+        }
+        ViewModelProvider(this, CoinListViewModel.Factory(activity.application)).get(CoinListViewModel::class.java)
     }
 
     override fun onCreateView(

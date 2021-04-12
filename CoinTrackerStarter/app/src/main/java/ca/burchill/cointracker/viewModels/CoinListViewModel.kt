@@ -1,13 +1,12 @@
 package ca.burchill.cointracker.viewModels
 
 import android.app.Application
-import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.*
+import ca.burchill.cointracker.database.getDatabase
 import ca.burchill.cointracker.network.CoinApi
 import ca.burchill.cointracker.network.CoinApiResponse
 import ca.burchill.cointracker.network.NetworkCoin
+import ca.burchill.cointracker.repository.CoinsRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -20,8 +19,9 @@ import retrofit2.await
 
 enum class CoinApiStatus { LOADING, ERROR, DONE }
 
+class CoinListViewModel(application: Application) : AndroidViewModel(application) {
 
-class CoinListViewModel() : ViewModel() {
+    private val coinsRepository = CoinsRepository(getDatabase(application))
 
     // The internal MutableLiveData that stores the status of the most recent request
     private val _status = MutableLiveData<CoinApiStatus>()
@@ -29,10 +29,7 @@ class CoinListViewModel() : ViewModel() {
         get() = _status
 
 
-    private val _coins = MutableLiveData<List<NetworkCoin>>()
-    val coins: LiveData<List<NetworkCoin>>
-        get() = _coins
-
+    val coins = coinsRepository.coins
 
 
     // or use viewModelScope
@@ -41,19 +38,16 @@ class CoinListViewModel() : ViewModel() {
 
 
     init {
-        getCoins()
+        refreshCoins()
     }
 
-    private fun getCoins() {
+    private fun refreshCoins() {
 
-       coroutineScope.launch {
+        coroutineScope.launch {
             try {
-                var coinResult = CoinApi.retrofitService.getCoins()
-                if (coinResult.coins.size > 0) {
-                    _coins.value = coinResult.coins
-                }
+                coinsRepository.refreshCoins()
             } catch (t: Throwable) {
-               _status.value = CoinApiStatus.ERROR
+                _status.value = CoinApiStatus.ERROR
             }
         }
     }
@@ -61,5 +55,18 @@ class CoinListViewModel() : ViewModel() {
     override fun onCleared() {
         super.onCleared()
         viewModelJob.cancel()
+    }
+
+    /**
+     * Factory for constructing DevByteViewModel with parameter
+     */
+    class Factory(val app: Application) : ViewModelProvider.Factory {
+        override fun <T : ViewModel?> create(modelClass: Class<T>): T {
+            if (modelClass.isAssignableFrom(CoinListViewModel::class.java)) {
+                @Suppress("UNCHECKED_CAST")
+                return CoinListViewModel(app) as T
+            }
+            throw IllegalArgumentException("Unable to construct viewmodel")
+        }
     }
 }
